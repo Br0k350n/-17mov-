@@ -170,6 +170,24 @@ end
 local hasGear = false
 local tankObj, maskObj
 
+local function UnequipScubaGear()
+    if maskObj then
+        DetachEntity(maskObj, false, true)
+        DeleteEntity(maskObj)
+    end
+
+    if tankObj then
+        DetachEntity(tankObj, false, true)
+        DeleteEntity(tankObj)
+    end
+
+    tankObj, maskObj, hasGear = nil, nil, false
+
+    local ped = PlayerPedId()
+    SetEnableScuba(ped, false)
+    SetEnableScubaGearLight(ped, false)
+end
+
 function ChangeClothes(type)
     RequestAnimDict("clothingshirt")
     while not HasAnimDictLoaded("clothingshirt") do
@@ -222,19 +240,7 @@ function ChangeClothes(type)
             end
         end)
     elseif hasGear and type == "citizen" then
-        if maskObj then
-            DetachEntity(maskObj, false, true)
-            DeleteEntity(maskObj)
-        end
-
-        if tankObj then
-            DetachEntity(tankObj, false, true)
-            DeleteEntity(tankObj)
-        end
-
-        tankObj, maskObj, hasGear = nil, nil, false
-        SetEnableScuba(ped, false)
-        SetEnableScubaGearLight(ped, false)
+        UnequipScubaGear()
     end
 
     if Config.Framework ~= "QBCore" and Config.Framework ~= "ESX" then
@@ -369,3 +375,14 @@ end
 for k,v in pairs(Config.Clothes.female) do
     table.insert(Config.realClothes.female, {component_id = componentIdTranslation[k], drawable = v.clotheId, texture = v.variation})
 end
+
+AddStateBagChangeHandler('isWorking', nil, function(bagName, key, value)
+    if not hasGear then
+        return
+    end
+
+    local playerBag = ('player:%s'):format(GetPlayerServerId(PlayerId()))
+    if bagName == playerBag and value == false then
+        UnequipScubaGear()
+    end
+end)
