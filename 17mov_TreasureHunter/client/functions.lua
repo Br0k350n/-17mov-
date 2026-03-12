@@ -189,6 +189,14 @@ local function UnequipScubaGear()
 end
 
 function ChangeClothes(type)
+    local requestedType = type
+
+    if requestedType == true or requestedType == "job" or requestedType == "on" then
+        requestedType = "work"
+    elseif requestedType == false or requestedType == nil or requestedType == "off" or requestedType == "stop" then
+        requestedType = "citizen"
+    end
+
     RequestAnimDict("clothingshirt")
     while not HasAnimDictLoaded("clothingshirt") do
         Wait(0)
@@ -198,7 +206,7 @@ function ChangeClothes(type)
 
     Citizen.Wait(1000)
 
-    if type == "work" and not hasGear then
+    if requestedType == "work" and not hasGear then
         local maskModel = `17mov_diving_gear_mask`
         local tankModel = `17mov_diving_gear_tank`
 
@@ -239,7 +247,7 @@ function ChangeClothes(type)
                 AttachEntityToEntity(tankObj, PlayerPed, GetPedBoneIndex(PlayerPed, 24818), -0.25, -0.25, 0.0, 180.0, 90.0, 0.0, true, true, false, false, 2, true)
             end
         end)
-    elseif hasGear and type == "citizen" then
+    elseif hasGear and requestedType == "citizen" then
         UnequipScubaGear()
     end
 
@@ -248,7 +256,7 @@ function ChangeClothes(type)
         return
     end
 
-    if type == "work" then
+    if requestedType == "work" then
         if GetEntityModel(PlayerPedId()) == 1885233650 then
             for k,v in pairs(Config.realClothes.male) do
                 SetPedComponentVariation(ped, v["component_id"], v["drawable"], v["texture"], 0)
@@ -258,9 +266,11 @@ function ChangeClothes(type)
                 SetPedComponentVariation(ped, v["component_id"], v["drawable"], v["texture"], 0)
             end
         end
-    elseif type == "citizen" then
+    elseif requestedType == "citizen" then
         if Config.Framework == "QBCore" then
             TriggerServerEvent('qb-clothes:loadPlayerSkin')
+            TriggerEvent('qb-clothing:client:loadPlayerClothing')
+            TriggerServerEvent('qb-clothing:loadPlayerSkin')
         elseif Config.Framework == "ESX" then
             Core.TriggerServerCallback('esx_skin:getPlayerSkin', function(skin)
                 TriggerEvent('skinchanger:loadSkin', skin)
