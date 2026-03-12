@@ -141,6 +141,55 @@ function ShowHelpNotification(msg)
     EndTextCommandDisplayHelp(0, false, true, -1)
 end
 
+local cachedOutfit = nil
+
+local function CacheCurrentOutfit(playerPed)
+    cachedOutfit = {
+        model = GetEntityModel(playerPed),
+        components = {},
+        props = {}
+    }
+
+    for componentId = 0, 11 do
+        cachedOutfit.components[componentId] = {
+            drawable = GetPedDrawableVariation(playerPed, componentId),
+            texture = GetPedTextureVariation(playerPed, componentId),
+            palette = GetPedPaletteVariation(playerPed, componentId)
+        }
+    end
+
+    for propId = 0, 7 do
+        cachedOutfit.props[propId] = {
+            drawable = GetPedPropIndex(playerPed, propId),
+            texture = GetPedPropTextureIndex(playerPed, propId)
+        }
+    end
+end
+
+local function RestoreCachedOutfit(playerPed)
+    if not cachedOutfit then
+        return
+    end
+
+    if cachedOutfit.model ~= GetEntityModel(playerPed) then
+        return
+    end
+
+    for componentId, variation in pairs(cachedOutfit.components) do
+        SetPedComponentVariation(playerPed, componentId, variation.drawable, variation.texture, variation.palette)
+    end
+
+    for propId, prop in pairs(cachedOutfit.props) do
+        if prop.drawable and prop.drawable >= 0 then
+            SetPedPropIndex(playerPed, propId, prop.drawable, prop.texture or 0, true)
+        else
+            ClearPedProp(playerPed, propId)
+        end
+    end
+
+    cachedOutfit = nil
+end
+
 function ChangeClothes(type)
     if Config.Framework ~= "QBCore" and Config.Framework ~= "ESX" then
         print("CANNOT CHANGE CLOTHES, PLEASE CONFIGURE UR CLOTHES SYSTEM IN /Client/Functions.lua file.")
@@ -154,6 +203,8 @@ function ChangeClothes(type)
     TaskPlayAnim(PlayerPed, "clothingshirt", "try_shirt_positive_d", 8.0, 1.0, -1, 49, 0, false, false, false)
     Citizen.Wait(1000)
     if type == "work" then
+        CacheCurrentOutfit(PlayerPed)
+
         if GetEntityModel(PlayerPedId()) == 1885233650 then
             for k,v in pairs(Config.realClothes.male) do
                 SetPedComponentVariation(PlayerPed, v["component_id"], v["drawable"], v["texture"], 0)
@@ -176,6 +227,9 @@ function ChangeClothes(type)
         TriggerEvent("fivem-appearance:ReloadSkin")
         TriggerEvent("illenium-appearance:client:reloadSkin")
         TriggerEvent("illenium-appearance:ReloadSkin")
+
+        Citizen.Wait(250)
+        RestoreCachedOutfit(PlayerPed)
     end
 
     Citizen.Wait(1000)
