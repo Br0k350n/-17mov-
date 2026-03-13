@@ -99,6 +99,10 @@ function SetVehicle(_vehicle)
     TriggerServerEvent("vehicles_keys:selfGiveVehicleKeys", plate)
     TriggerEvent("vehiclekeys:client:SetOwner", plate)
 
+    if GetResourceState("tgiann-hotwire") == "started" then
+        exports["tgiann-hotwire"]:GiveKeyPlate(plate, false)
+    end
+
 
     -- Fuel systems
     if GetResourceState("LegacyFuel") == "started" then
